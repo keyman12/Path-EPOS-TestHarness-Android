@@ -17,7 +17,14 @@ data class TerminalSaleRequest(
     val amountPence: Int,
     val currencyCode: String,
     val lineItems: List<TerminalLineItem>,
-    val operatorId: String
+    val operatorId: String,
+    /**
+     * When true, the EPOS would like the card terminal to show a customer-
+     * facing tip prompt before the card tap. The adapter decides how to
+     * honour this — the OCPay loopback picks a random preset tip; a real
+     * payment SDK would drive the terminal's own tip UI.
+     */
+    val promptForTip: Boolean = false
 )
 
 data class TerminalSaleResponse(
@@ -27,7 +34,15 @@ data class TerminalSaleResponse(
     val maskedPan: String? = null,
     val terminalReference: String? = null,
     val cardReceiptData: TerminalCardReceipt? = null,
-    val failureReason: String? = null
+    val failureReason: String? = null,
+    /** Base (pre-tip) amount in minor units. Defaults to the request amount. */
+    val baseAmountPence: Int = 0,
+    /** Customer-added tip in minor units. 0 when no tip (or no prompt). */
+    val tipAmountPence: Int = 0,
+    /** Card-charged total in minor units (= base + tip). */
+    val totalAmountPence: Int = 0,
+    /** Preset percentage × 10 (100 = 10%, 150 = 15%, 200 = 20%); null if not a preset. */
+    val tipPercentX10: Int? = null
 )
 
 data class TerminalRefundRequest(

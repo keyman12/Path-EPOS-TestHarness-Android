@@ -9,8 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import tech.path2ai.epos.managers.OrderManager
+import tech.path2ai.epos.terminal.PaymentSettings
 import tech.path2ai.epos.terminal.TerminalConnectionState
 import tech.path2ai.epos.terminal.TerminalManager
 import tech.path2ai.epos.ui.theme.OCGreen
@@ -53,6 +56,42 @@ fun SettingsScreen(
                     )
                 },
                 modifier = Modifier.clickable(onClick = onNavigateToTerminal)
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Payment Options — the OCPay loopback honours "Allow tipping" by
+            // randomly picking one of 10% / 15% / 20% on each sale when on.
+            Text("Payment Options", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            val context = LocalContext.current
+            var allowTipping by remember {
+                mutableStateOf(PaymentSettings.isTippingAllowed(context))
+            }
+            ListItem(
+                headlineContent = { Text("Allow tipping") },
+                supportingContent = {
+                    Text(
+                        "Asks the terminal to prompt the customer for a tip. " +
+                            "In the OCPay loopback, picks a random preset (10/15/20%).",
+                        color = Color.Gray
+                    )
+                },
+                leadingContent = {
+                    Icon(
+                        Icons.Default.MonetizationOn,
+                        contentDescription = null,
+                        tint = if (allowTipping) OCGreen else Color.Gray
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = allowTipping,
+                        onCheckedChange = {
+                            allowTipping = it
+                            PaymentSettings.setTippingAllowed(context, it)
+                        }
+                    )
+                }
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))

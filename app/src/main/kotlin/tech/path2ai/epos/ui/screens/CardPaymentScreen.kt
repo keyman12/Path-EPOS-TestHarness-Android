@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,7 @@ fun CardPaymentScreen(
     var saleResponse by remember { mutableStateOf<TerminalSaleResponse?>(null) }
     val scope = rememberCoroutineScope()
     val connectionState by terminalManager.connectionState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         try {
@@ -57,6 +59,7 @@ fun CardPaymentScreen(
 
             state = CardPaymentState.WAITING_FOR_CARD
             state = CardPaymentState.PROCESSING
+            val promptForTip = PaymentSettings.isTippingAllowed(context)
             val request = TerminalSaleRequest(
                 orderReference = orderManager.generateReference(),
                 amountPence = total,
@@ -64,23 +67,28 @@ fun CardPaymentScreen(
                 lineItems = cartItems.map {
                     TerminalLineItem(it.product.name, it.quantity, it.product.price)
                 },
-                operatorId = "till-01"
+                operatorId = "till-01",
+                promptForTip = promptForTip
             )
             val response = terminalManager.submitSale(request)
             saleResponse = response
 
             if (response.authorised) {
                 state = CardPaymentState.APPROVED
+                val tip = response.tipAmountPence
+                val totalCharged = response.totalAmountPence.takeIf { it > 0 } ?: total
                 orderManager.recordSale(
                     orderReference = request.orderReference,
                     lineItems = cartItems.map { OrderLineItem(it.product.name, it.quantity, it.product.price) },
-                    amountPence = total,
+                    amountPence = totalCharged,
                     currencyCode = "GBP",
                     paymentMethod = PaymentMethod.CARD,
                     cardLastFour = response.maskedPan?.takeLast(4),
                     cardScheme = response.cardScheme,
                     terminalReference = response.terminalReference,
-                    authCode = response.authorisationCode
+                    authCode = response.authorisationCode,
+                    baseAmountPence = response.baseAmountPence.takeIf { it > 0 } ?: total,
+                    tipAmountPence = tip.takeIf { it > 0 }
                 )
             } else {
                 errorMessage = response.failureReason ?: "Card declined"
@@ -108,7 +116,9 @@ fun CardPaymentScreen(
                 modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("£%.2f".format(total / 100.0), fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                // Header figure: cart total while processing, card-charged total once we have a response.
+                val displayAmount = saleResponse?.totalAmountPence?.takeIf { it > 0 } ?: total
+                Text("£%.2f".format(displayAmount / 100.0), fontSize = 28.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(24.dp))
 
                 when (state) {
@@ -127,6 +137,24 @@ fun CardPaymentScreen(
                         Spacer(Modifier.height(16.dp))
                         Text("Payment Approved", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = OCGreen)
                         saleResponse?.let { r ->
+                            // Tip breakdown when the customer added a tip.
+                            if (r.tipAmountPence > 0) {
+                                Spacer(Modifier.height(8.dp))
+                                val pct = r.tipPercentX10
+                                val pctLabel = if (pct != null) {
+                                    if (pct % 10 == 0) "${pct / 10}%"
+                                    else "%.1f%%".format(pct / 10.0)
+                                } else ""
+                                Text(
+                                    "Base £%.2f + Tip £%.2f".format(
+                                        r.baseAmountPence / 100.0,
+                                        r.tipAmountPence / 100.0
+                                    ) + if (pctLabel.isNotEmpty()) " ($pctLabel)" else "",
+                                    color = Color.Gray,
+                                    fontSize = 13.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                             r.cardScheme?.let { Text("$it ${r.maskedPan ?: ""}", color = Color.Gray) }
                             r.authorisationCode?.let { Text("Auth: $it", color = Color.Gray, fontSize = 12.sp) }
                         }

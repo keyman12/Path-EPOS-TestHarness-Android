@@ -35,6 +35,19 @@ class OCPayTerminalAdapter : PaymentTerminalAdapter {
         val txnRef = "OCP-${(System.currentTimeMillis() / 1000) % 1_000_000}-${(1_000..9_999).random()}"
         val timestamp = java.time.Instant.now().toString()
 
+        // Loopback tipping: when the EPOS asks for a customer tip prompt, we
+        // simulate a customer who always picks one of the three presets at
+        // random (10% / 15% / 20%). Tip is rounded up to the nearest penny.
+        val base = request.amountPence
+        val (tip, percentX10) = if (request.promptForTip) {
+            val percent = listOf(100, 150, 200).random()
+            val tipAmt = ((base.toLong() * percent + 999) / 1000).toInt()
+            tipAmt to percent
+        } else {
+            0 to null
+        }
+        val total = base + tip
+
         return TerminalSaleResponse(
             authorised = true,
             authorisationCode = authCode,
@@ -54,7 +67,11 @@ class OCPayTerminalAdapter : PaymentTerminalAdapter {
                 maskedPan = "****1234",
                 cardScheme = "VISA"
             ),
-            failureReason = null
+            failureReason = null,
+            baseAmountPence = base,
+            tipAmountPence = tip,
+            totalAmountPence = total,
+            tipPercentX10 = percentX10
         )
     }
 

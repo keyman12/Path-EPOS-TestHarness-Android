@@ -88,7 +88,17 @@ fun OrderHistoryScreen(
                                 Text(dateFormat.format(Date(order.date)), fontSize = 12.sp, color = Color.Gray)
                                 order.cardDisplay?.let { Text(it, fontSize = 12.sp, color = Color.Gray) }
                             }
-                            Text(order.formattedAmount, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(order.formattedAmount, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                // Show the tip breakdown when this order carried one.
+                                if (order.hasTip) {
+                                    Text(
+                                        "incl. ${order.formattedTip} tip",
+                                        fontSize = 11.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
                             if (order.canRefund) {
                                 Spacer(Modifier.width(8.dp))
                                 TextButton(onClick = { refundOrder = order }) {
