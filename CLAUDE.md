@@ -728,6 +728,29 @@ RefundState.APPROVED -> {
 }
 ```
 
+**5c. Customer tipping** — only needed if the harness's tipping feature is in use.
+
+This harness ships with a customer-tipping feature wired through the OCPay
+loopback: Settings → Payment Options has an **Allow tipping** switch, and
+`TerminalSaleRequest` already carries a `promptForTip` flag.
+`TerminalSaleResponse` already has the matching breakdown fields
+(`baseAmountPence`, `tipAmountPence`, `totalAmountPence`, `tipPercentX10`,
+`customerTimedOut`). Your `PathTerminalAdapter` needs to populate them
+so the feature keeps working once the real SDK replaces OCPay.
+
+- Call `get_code_example` with `operation='sale-with-tip'` and `platform='android'`
+  for the canonical pattern.
+- Inside `submitSale`, pass the request's `promptForTip` into
+  `TransactionRequest.sale(..., promptForTip = ...)`.
+- On the SDK result, map `baseAmountMinor` / `tipAmountMinor` /
+  `totalAmountMinor` / `tipPercentX10` onto the matching
+  `TerminalSaleResponse.*Pence` fields.
+- Handle the SDK's new `CUSTOMER_TIMEOUT` state by returning a response
+  with `authorised = false` and `customerTimedOut = true`. **Then update
+  `CardPaymentScreen` to check `saleResponse?.customerTimedOut` and show
+  a "Try again / Cancel" dialog instead of the "Payment Declined" one.**
+- Call `explain_error` with `customer_timeout` for the full rationale.
+
 ---
 
 ### Step 6 — Update OrderHistoryScreen.kt

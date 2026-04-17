@@ -42,7 +42,15 @@ data class TerminalSaleResponse(
     /** Card-charged total in minor units (= base + tip). */
     val totalAmountPence: Int = 0,
     /** Preset percentage × 10 (100 = 10%, 150 = 15%, 200 = 20%); null if not a preset. */
-    val tipPercentX10: Int? = null
+    val tipPercentX10: Int? = null,
+    /**
+     * True when the customer walked away from a terminal-facing prompt
+     * (e.g. the tip screen) before choosing. Recoverable — the EPOS should
+     * offer "Try again / Cancel" rather than a decline flow. OCPay loopback
+     * never sets this; a real payment SDK adapter populates it when the
+     * underlying SDK reports its customer-timeout state.
+     */
+    val customerTimedOut: Boolean = false
 )
 
 data class TerminalRefundRequest(
