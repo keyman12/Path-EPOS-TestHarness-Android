@@ -47,9 +47,9 @@ maven { url = uri("https://jitpack.io") }
 And `app/build.gradle.kts` contains (uncommented):
 
 ```kotlin
-implementation("com.github.keyman12.path-terminal-sdk-android:path-core-models:v1.3")
-implementation("com.github.keyman12.path-terminal-sdk-android:path-terminal-sdk:v1.3")
-implementation("com.github.keyman12.path-terminal-sdk-android:path-emulator-adapter:v1.3")
+implementation("com.github.keyman12.path-terminal-sdk-android:path-core-models:v1.4")
+implementation("com.github.keyman12.path-terminal-sdk-android:path-terminal-sdk:v1.4")
+implementation("com.github.keyman12.path-terminal-sdk-android:path-emulator-adapter:v1.4")
 ```
 
 If these lines are still commented out, uncomment them now.
@@ -870,7 +870,7 @@ Minimum SDK: API 26 (Android 8.0). Target: API 35.
 
 ## Important Notes
 
-- **DO NOT** switch to a composite build or local project references. Use JitPack v1.3 as specified.
+- **DO NOT** switch to a composite build or local project references. Use JitPack v1.4 as specified.
 - **DO NOT** modify `PaymentTerminalAdapter.kt` or `TerminalManager.kt`.
 - Connection takes up to 15s on first attempt — this is normal Android BLE behaviour.
 - The `connectMutex` in `PathTerminalAdapter` prevents a double-connect race condition — keep it.
