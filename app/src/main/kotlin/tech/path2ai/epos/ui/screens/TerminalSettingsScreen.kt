@@ -12,7 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import tech.path2ai.epos.terminal.PaymentSettings
 import tech.path2ai.epos.terminal.TerminalConnectionState
 import tech.path2ai.epos.terminal.TerminalManager
 import tech.path2ai.epos.ui.theme.OCGreen
@@ -134,6 +138,65 @@ fun TerminalSettingsScreen(
                     }
                 }
             }
+
+            Spacer(Modifier.height(16.dp))
+
+            // ── Terminal login (connect-time session credentials) ───────────
+            // The OCPay loopback doesn't authenticate, but the fields mirror the
+            // demo's connect-time login; locked while connected (disconnect to edit).
+            val context = LocalContext.current
+            val connected = connectionState is TerminalConnectionState.Connected
+            var loginUsername by remember { mutableStateOf(PaymentSettings.loginUsername(context)) }
+            var loginPassword by remember { mutableStateOf(PaymentSettings.loginPassword(context)) }
+            var loginShift by remember { mutableStateOf(PaymentSettings.loginShift(context)) }
+            var refundPassword by remember { mutableStateOf(PaymentSettings.refundPassword(context)) }
+            var passwordVisible by remember { mutableStateOf(false) }
+
+            Text("Terminal login", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = loginUsername,
+                onValueChange = { loginUsername = it; PaymentSettings.setLoginUsername(context, it) },
+                label = { Text("Login username") },
+                singleLine = true,
+                enabled = !connected,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = loginPassword,
+                onValueChange = { loginPassword = it; PaymentSettings.setLoginPassword(context, it) },
+                label = { Text("Login password") },
+                singleLine = true,
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                        )
+                    }
+                },
+                enabled = !connected,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = loginShift,
+                onValueChange = { loginShift = it; PaymentSettings.setLoginShift(context, it) },
+                label = { Text("Login shift") },
+                singleLine = true,
+                enabled = !connected,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = refundPassword,
+                onValueChange = { refundPassword = it; PaymentSettings.setRefundPassword(context, it) },
+                label = { Text("Refund password (blank on test estates)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(Modifier.height(16.dp))
 

@@ -44,4 +44,44 @@ object PaymentSettings {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_SIM_OUTCOME, outcome.name).apply()
     }
+
+    // ── Terminal login / session credentials ────────────────────────────────
+    // Shown in the Terminal settings as the connect-time login. The OCPay
+    // loopback doesn't authenticate against anything, but the UI mirrors the
+    // demo and a real payment SDK integrated later would consume these.
+    private const val KEY_LOGIN_USER = "login_username"
+    private const val KEY_LOGIN_PASS = "login_password"
+    private const val KEY_LOGIN_SHIFT = "login_shift"
+    private const val KEY_REFUND_PASS = "refund_password"
+
+    fun loginUsername(context: Context): String =
+        prefs(context).getString(KEY_LOGIN_USER, "user") ?: "user"
+
+    fun setLoginUsername(context: Context, v: String) {
+        prefs(context).edit().putString(KEY_LOGIN_USER, v.trim()).apply()
+    }
+
+    fun loginPassword(context: Context): String =
+        prefs(context).getString(KEY_LOGIN_PASS, "password123") ?: "password123"
+
+    fun setLoginPassword(context: Context, v: String) {
+        prefs(context).edit().putString(KEY_LOGIN_PASS, v).apply()
+    }
+
+    fun loginShift(context: Context): String =
+        prefs(context).getString(KEY_LOGIN_SHIFT, "shift123") ?: "shift123"
+
+    fun setLoginShift(context: Context, v: String) {
+        prefs(context).edit().putString(KEY_LOGIN_SHIFT, v.trim()).apply()
+    }
+
+    fun refundPassword(context: Context): String =
+        prefs(context).getString(KEY_REFUND_PASS, "") ?: ""
+
+    fun setRefundPassword(context: Context, v: String) {
+        prefs(context).edit().putString(KEY_REFUND_PASS, v).apply()
+    }
+
+    private fun prefs(context: Context) =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 }
