@@ -22,4 +22,13 @@ interface PaymentTerminalAdapter {
     suspend fun submitRefund(request: TerminalRefundRequest): TerminalRefundResponse
     suspend fun submitVoid(request: TerminalVoidRequest): TerminalVoidResponse
     suspend fun getTransactionStatus(reference: String): TerminalTransactionStatus
+
+    /**
+     * Set (or clear) the idle customer-display branding (a merchant logo shown on
+     * connect and between transactions — "attract mode"). Pass null to turn it
+     * off. On a real Verifone terminal this paints the customer screen; the
+     * OCPay loopback has no physical screen, so its implementation is a logged
+     * no-op (present for parity with the demo).
+     */
+    suspend fun setIdleBranding(branding: CustomerDisplayBranding?)
 }

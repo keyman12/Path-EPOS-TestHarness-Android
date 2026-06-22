@@ -29,6 +29,18 @@ class OCPayTerminalAdapter : PaymentTerminalAdapter {
     override suspend fun scanForDevices(): List<TerminalDeviceInfo> = emptyList()
     override suspend fun connectToDevice(id: String) {}
 
+    override suspend fun setIdleBranding(branding: CustomerDisplayBranding?) {
+        // Loopback: no physical customer screen. Logged for parity with the
+        // demo, where the Verifone adapter paints the logo on the VP100.
+        android.util.Log.d(
+            "OCPay",
+            if (branding != null)
+                "idle branding set (caption='${branding.caption ?: ""}', " +
+                    "${branding.imageBytes?.size ?: 0}B logo) — no-op on the simulator"
+            else "idle branding cleared — no-op on the simulator"
+        )
+    }
+
     override suspend fun submitSale(request: TerminalSaleRequest): TerminalSaleResponse {
         delay(2_500)
 

@@ -1,5 +1,6 @@
 package tech.path2ai.epos.terminal
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,24 @@ class TerminalManager(private val adapter: PaymentTerminalAdapter) : ViewModel()
 
     fun disconnect() {
         viewModelScope.launch { adapter.disconnect() }
+    }
+
+    /**
+     * Push the current customer-display branding (a merchant logo) to the
+     * adapter — or clear it when disabled. Reads [CustomerDisplaySettings]; the
+     * OCPay loopback treats it as a no-op. [context] is supplied by the caller
+     * because this ViewModel holds no Context.
+     */
+    fun applyCustomerDisplayBranding(context: Context) {
+        viewModelScope.launch {
+            val branding = if (CustomerDisplaySettings.isEnabled(context)) {
+                CustomerDisplayBranding(
+                    imageBytes = CustomerDisplaySettings.logoBytes(context),
+                    caption = CustomerDisplaySettings.caption(context).ifBlank { null }
+                )
+            } else null
+            adapter.setIdleBranding(branding)
+        }
     }
 
     fun scanForDevices() {
