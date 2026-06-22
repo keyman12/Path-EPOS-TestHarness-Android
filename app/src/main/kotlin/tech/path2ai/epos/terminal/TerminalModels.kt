@@ -66,6 +66,17 @@ data class TerminalRefundResponse(
     val failureReason: String? = null
 )
 
+data class TerminalVoidRequest(
+    val originalTerminalReference: String,
+    val orderReference: String
+)
+
+data class TerminalVoidResponse(
+    val succeeded: Boolean,
+    val voidReference: String? = null,
+    val failureReason: String? = null
+)
+
 data class TerminalTransactionStatus(
     val reference: String,
     val state: String,

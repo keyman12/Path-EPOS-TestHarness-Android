@@ -20,5 +20,6 @@ interface PaymentTerminalAdapter {
     suspend fun connectToDevice(id: String)
     suspend fun submitSale(request: TerminalSaleRequest): TerminalSaleResponse
     suspend fun submitRefund(request: TerminalRefundRequest): TerminalRefundResponse
+    suspend fun submitVoid(request: TerminalVoidRequest): TerminalVoidResponse
     suspend fun getTransactionStatus(reference: String): TerminalTransactionStatus
 }

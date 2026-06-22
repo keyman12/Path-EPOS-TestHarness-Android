@@ -85,6 +85,16 @@ class OCPayTerminalAdapter : PaymentTerminalAdapter {
         )
     }
 
+    override suspend fun submitVoid(request: TerminalVoidRequest): TerminalVoidResponse {
+        delay(1_500)
+        val voidRef = "OCP-VOID-${(System.currentTimeMillis() / 1000) % 1_000_000}-${(1_000..9_999).random()}"
+        return TerminalVoidResponse(
+            succeeded = true,
+            voidReference = voidRef,
+            failureReason = null
+        )
+    }
+
     override suspend fun getTransactionStatus(reference: String): TerminalTransactionStatus {
         delay(500)
         return TerminalTransactionStatus(

@@ -32,6 +32,7 @@ fun OrderHistoryScreen(
 ) {
     val orders by orderManager.orders.collectAsState()
     var refundOrder by remember { mutableStateOf<CompletedOrder?>(null) }
+    var voidOrder by remember { mutableStateOf<CompletedOrder?>(null) }
     val scope = rememberCoroutineScope()
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy HH:mm", Locale.UK) }
 
@@ -41,6 +42,15 @@ fun OrderHistoryScreen(
             terminalManager = terminalManager,
             orderManager = orderManager,
             onDismiss = { refundOrder = null }
+        )
+    }
+
+    voidOrder?.let { order ->
+        VoidPaymentScreen(
+            order = order,
+            terminalManager = terminalManager,
+            orderManager = orderManager,
+            onDismiss = { voidOrder = null }
         )
     }
 
@@ -105,6 +115,12 @@ fun OrderHistoryScreen(
                                     Text("Refund", color = OCRed, fontSize = 12.sp)
                                 }
                             }
+                            if (order.canVoid) {
+                                Spacer(Modifier.width(4.dp))
+                                TextButton(onClick = { voidOrder = order }) {
+                                    Text("Void", color = Color(0xFFD97706), fontSize = 12.sp)
+                                }
+                            }
                         }
                     }
                 }
@@ -117,9 +133,11 @@ fun OrderHistoryScreen(
 private fun StatusBadge(status: OrderStatus, orderType: OrderType) {
     val (text, color) = when {
         orderType == OrderType.REFUND -> "REFUND" to Color(0xFF9C27B0)
+        orderType == OrderType.VOID -> "VOID" to Color(0xFFD97706)
         status == OrderStatus.COMPLETED -> "COMPLETED" to OCGreen
         status == OrderStatus.DECLINED -> "DECLINED" to OCRed
         status == OrderStatus.REFUNDED -> "REFUNDED" to Color(0xFFFF9800)
+        status == OrderStatus.VOIDED -> "VOIDED" to Color(0xFFD97706)
         else -> "" to Color.Gray
     }
     if (text.isNotEmpty()) {

@@ -65,8 +65,27 @@ class TerminalManager(private val adapter: PaymentTerminalAdapter) : ViewModel()
         }
     }
 
+    suspend fun submitVoid(request: TerminalVoidRequest): TerminalVoidResponse {
+        _isBusy.value = true
+        return try {
+            adapter.submitVoid(request)
+        } finally {
+            _isBusy.value = false
+        }
+    }
+
     suspend fun getTransactionStatus(reference: String): TerminalTransactionStatus {
         return adapter.getTransactionStatus(reference)
+    }
+
+    /**
+     * Abort an in-flight operation. The OCPay loopback has nothing to interrupt
+     * (its calls just complete), so this only clears the busy flag — but the
+     * payment screens still call it on cancel so the contract matches a real
+     * terminal adapter that would need to tell the device to stop waiting.
+     */
+    fun cancelCurrentOperation() {
+        _isBusy.value = false
     }
 
     val isConnected: Boolean
