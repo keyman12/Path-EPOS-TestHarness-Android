@@ -35,7 +35,8 @@ fun SettingsScreen(
     orderManager: OrderManager,
     onBack: () -> Unit,
     onNavigateToTerminal: () -> Unit,
-    onNavigateToHistory: () -> Unit
+    onNavigateToHistory: () -> Unit,
+    onNavigateToSmtp: () -> Unit
 ) {
     val connectionState by terminalManager.connectionState.collectAsState()
     val orders by orderManager.orders.collectAsState()
@@ -147,6 +148,14 @@ fun SettingsScreen(
                 }
             )
 
+            // Email receipts — configure the SMTP server used to email receipts.
+            ListItem(
+                headlineContent = { Text("Email receipts (SMTP)") },
+                supportingContent = { Text("Configure the mail server used to send receipts", color = Color.Gray) },
+                leadingContent = { Icon(Icons.Default.Email, contentDescription = null) },
+                modifier = Modifier.clickable(onClick = onNavigateToSmtp)
+            )
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Orders
@@ -168,5 +177,25 @@ fun SettingsScreen(
                 leadingContent = { Icon(Icons.Default.Info, contentDescription = null) }
             )
         }
+    }
+}
+
+/** Sub-screen hosting the SMTP (email receipts) configuration form. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SmtpConfigScreen(onBack: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Email Receipts (SMTP)") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        SMTPConfigContent(modifier = Modifier.padding(padding))
     }
 }

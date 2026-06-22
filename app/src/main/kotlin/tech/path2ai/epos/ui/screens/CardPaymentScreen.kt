@@ -15,11 +15,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import tech.path2ai.epos.managers.OrderManager
 import tech.path2ai.epos.models.*
 import tech.path2ai.epos.terminal.*
 import tech.path2ai.epos.ui.theme.OCGreen
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlin.math.roundToInt
 
 private enum class CardPaymentState {
     CHECKING_TERMINAL,
@@ -46,6 +51,8 @@ fun CardPaymentScreen(
     var state by remember { mutableStateOf(CardPaymentState.CHECKING_TERMINAL) }
     var errorMessage by remember { mutableStateOf("") }
     var saleResponse by remember { mutableStateOf<TerminalSaleResponse?>(null) }
+    var fullReceipt by remember { mutableStateOf<FullReceipt?>(null) }
+    var showReceipt by remember { mutableStateOf(false) }
     // Bumped when the cashier hits "Try Again" — re-keys the LaunchedEffect.
     var attemptToken by remember { mutableStateOf(0) }
     val connectionState by terminalManager.connectionState.collectAsState()
@@ -109,6 +116,10 @@ fun CardPaymentScreen(
                         baseAmountPence = response.baseAmountPence.takeIf { it > 0 } ?: total,
                         tipAmountPence = tip.takeIf { it > 0 }
                     )
+                    // Build the receipt and show it after a short beat.
+                    fullReceipt = buildReceipt(cartItems, total, request.orderReference, response)
+                    delay(300)
+                    showReceipt = true
                 }
                 // Customer walked away from the tip prompt — recoverable, not a
                 // decline. Don't record anything; let the cashier retry.
@@ -136,6 +147,16 @@ fun CardPaymentScreen(
         } catch (e: Exception) {
             errorMessage = e.message ?: "Terminal error"
             state = CardPaymentState.ERROR
+        }
+    }
+
+    // Once approved and the receipt is ready, the receipt dialog takes over
+    // (on-screen view + Print / Email / No receipt / Done).
+    if (showReceipt) {
+        val receipt = fullReceipt
+        if (receipt != null) {
+            ReceiptDialog(receipt = receipt, onNoReceipt = onComplete, onDone = onComplete)
+            return
         }
     }
 
@@ -173,35 +194,18 @@ fun CardPaymentScreen(
                         TextButton(onClick = cancelAndDismiss) { Text("Cancel") }
                     }
                     CardPaymentState.APPROVED -> {
+                        // Brief beat before the receipt dialog takes over.
                         Icon(Icons.Default.CheckCircle, contentDescription = null, tint = OCGreen, modifier = Modifier.size(64.dp))
                         Spacer(Modifier.height(16.dp))
                         Text("Payment Approved", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = OCGreen)
                         saleResponse?.let { r ->
-                            // Tip breakdown when the customer added a tip.
-                            if (r.tipAmountPence > 0) {
-                                Spacer(Modifier.height(8.dp))
-                                val pct = r.tipPercentX10
-                                val pctLabel = if (pct != null) {
-                                    if (pct % 10 == 0) "${pct / 10}%"
-                                    else "%.1f%%".format(pct / 10.0)
-                                } else ""
-                                Text(
-                                    "Base £%.2f + Tip £%.2f".format(
-                                        r.baseAmountPence / 100.0,
-                                        r.tipAmountPence / 100.0
-                                    ) + if (pctLabel.isNotEmpty()) " ($pctLabel)" else "",
-                                    color = Color.Gray,
-                                    fontSize = 13.sp,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
                             r.cardScheme?.let { Text("$it ${r.maskedPan ?: ""}", color = Color.Gray) }
                             r.authorisationCode?.let { Text("Auth: $it", color = Color.Gray, fontSize = 12.sp) }
                         }
-                        Spacer(Modifier.height(24.dp))
-                        Button(onClick = onComplete, colors = ButtonDefaults.buttonColors(containerColor = OCGreen)) {
-                            Text("Done")
-                        }
+                        Spacer(Modifier.height(12.dp))
+                        Text("Loading receipt…", color = Color.Gray, fontSize = 12.sp)
+                        Spacer(Modifier.height(8.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = OCGreen, strokeWidth = 2.dp)
                     }
                     CardPaymentState.DECLINED -> {
                         Icon(Icons.Default.Cancel, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(64.dp))
@@ -254,4 +258,43 @@ fun CardPaymentScreen(
             }
         }
     }
+}
+
+/** Build a [FullReceipt] from the cart + sale response data. */
+private fun buildReceipt(
+    cartItems: List<CartItem>,
+    total: Int,
+    orderRef: String,
+    response: TerminalSaleResponse
+): FullReceipt {
+    // Use the breakdown from the terminal when present; fall back to the cart
+    // total. Base amount drives the VAT calc (tip sits on top, not VATable);
+    // total drives the bottom line so the receipt matches what was charged.
+    val baseFromTerminal = response.baseAmountPence.takeIf { it > 0 }
+    val totalFromTerminal = response.totalAmountPence.takeIf { it > 0 } ?: total
+    val tip = response.tipAmountPence
+
+    val cartBase = baseFromTerminal ?: total
+    val subtotal = (cartBase / 1.2).roundToInt()
+    val vatAmount = cartBase - subtotal
+
+    val dateFormat = SimpleDateFormat("dd MMM yyyy HH:mm", Locale.UK)
+
+    return FullReceipt(
+        merchantName = "Path Café",
+        merchantAddress = "1 Tech Street, London EC1A 1BB",
+        orderNumber = orderRef,
+        tillNumber = "01",
+        cashierName = "Cashier",
+        orderDate = dateFormat.format(Date()),
+        lineItems = cartItems.map {
+            ReceiptLineItem(it.product.name, it.quantity, it.product.price)
+        },
+        subtotal = subtotal,
+        vatAmount = vatAmount,
+        total = totalFromTerminal,
+        currency = "GBP",
+        cardReceiptBlock = response.cardReceiptData?.let { CardReceiptBlock.from(it) },
+        tipAmount = tip
+    )
 }

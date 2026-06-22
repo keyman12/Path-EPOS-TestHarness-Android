@@ -31,8 +31,12 @@ fun AppNavigation(
                 orderManager = orderManager,
                 onBack = { navController.popBackStack() },
                 onNavigateToTerminal = { navController.navigate("terminal_settings") },
-                onNavigateToHistory = { navController.navigate("order_history") }
+                onNavigateToHistory = { navController.navigate("order_history") },
+                onNavigateToSmtp = { navController.navigate("smtp_config") }
             )
+        }
+        composable("smtp_config") {
+            SmtpConfigScreen(onBack = { navController.popBackStack() })
         }
         composable("terminal_settings") {
             TerminalSettingsScreen(
