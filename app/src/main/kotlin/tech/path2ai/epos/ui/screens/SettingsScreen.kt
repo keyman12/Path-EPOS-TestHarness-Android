@@ -14,9 +14,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import tech.path2ai.epos.managers.OrderManager
 import tech.path2ai.epos.terminal.PaymentSettings
+import tech.path2ai.epos.terminal.SimulatedOutcome
 import tech.path2ai.epos.terminal.TerminalConnectionState
 import tech.path2ai.epos.terminal.TerminalManager
 import tech.path2ai.epos.ui.theme.OCGreen
+
+/** Friendly labels for the loopback decline-simulation selector. */
+private fun SimulatedOutcome.label(): String = when (this) {
+    SimulatedOutcome.APPROVE -> "Approve"
+    SimulatedOutcome.DECLINE -> "Decline"
+    SimulatedOutcome.NO_CARD -> "No card (timeout)"
+    SimulatedOutcome.WALK_AWAY -> "Customer walk-away"
+    SimulatedOutcome.TERMINAL_ERROR -> "Terminal error"
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +101,49 @@ fun SettingsScreen(
                             PaymentSettings.setTippingAllowed(context, it)
                         }
                     )
+                }
+            )
+
+            // Simulate next card outcome — loopback-only test control so the
+            // decline / timeout / error handling can be exercised without
+            // hardware. Sticky until changed; APPROVE = normal sale.
+            var simOutcome by remember { mutableStateOf(PaymentSettings.simulatedOutcome(context)) }
+            var simMenuOpen by remember { mutableStateOf(false) }
+            ListItem(
+                headlineContent = { Text("Simulate next card outcome") },
+                supportingContent = {
+                    Text(
+                        "Forces the OCPay loopback's result so you can test declines, " +
+                            "timeouts and terminal errors. Stays until you change it.",
+                        color = Color.Gray
+                    )
+                },
+                leadingContent = {
+                    Icon(
+                        Icons.Default.Science,
+                        contentDescription = null,
+                        tint = if (simOutcome == SimulatedOutcome.APPROVE) OCGreen else Color(0xFFFF9800)
+                    )
+                },
+                trailingContent = {
+                    Box {
+                        TextButton(onClick = { simMenuOpen = true }) {
+                            Text(simOutcome.label())
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
+                        DropdownMenu(expanded = simMenuOpen, onDismissRequest = { simMenuOpen = false }) {
+                            SimulatedOutcome.values().forEach { outcome ->
+                                DropdownMenuItem(
+                                    text = { Text(outcome.label()) },
+                                    onClick = {
+                                        simOutcome = outcome
+                                        PaymentSettings.setSimulatedOutcome(context, outcome)
+                                        simMenuOpen = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             )
 

@@ -12,6 +12,14 @@ data class TerminalDeviceInfo(
     val name: String
 )
 
+/**
+ * Forces a deterministic outcome out of the OCPay loopback so the EPOS's
+ * decline / timeout / error handling can be exercised without real hardware
+ * (a real payment SDK ignores this — the outcome comes from the acquirer).
+ * Driven from Settings → "Simulate next card outcome".
+ */
+enum class SimulatedOutcome { APPROVE, DECLINE, NO_CARD, WALK_AWAY, TERMINAL_ERROR }
+
 data class TerminalSaleRequest(
     val orderReference: String,
     val amountPence: Int,
@@ -24,7 +32,9 @@ data class TerminalSaleRequest(
      * honour this — the OCPay loopback picks a random preset tip; a real
      * payment SDK would drive the terminal's own tip UI.
      */
-    val promptForTip: Boolean = false
+    val promptForTip: Boolean = false,
+    /** Loopback-only: which outcome to simulate. APPROVE = normal sale. */
+    val simulatedOutcome: SimulatedOutcome = SimulatedOutcome.APPROVE
 )
 
 data class TerminalSaleResponse(
@@ -50,7 +60,11 @@ data class TerminalSaleResponse(
      * never sets this; a real payment SDK adapter populates it when the
      * underlying SDK reports its customer-timeout state.
      */
-    val customerTimedOut: Boolean = false
+    val customerTimedOut: Boolean = false,
+    /** No card was presented within the window — NOT a decline. */
+    val timedOut: Boolean = false,
+    /** Terminal couldn't run the transaction (e.g. config issue) — NOT a decline. */
+    val notCompleted: Boolean = false
 )
 
 data class TerminalRefundRequest(

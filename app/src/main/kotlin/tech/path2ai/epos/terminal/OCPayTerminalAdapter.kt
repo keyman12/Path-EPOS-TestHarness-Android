@@ -31,6 +31,29 @@ class OCPayTerminalAdapter : PaymentTerminalAdapter {
 
     override suspend fun submitSale(request: TerminalSaleRequest): TerminalSaleResponse {
         delay(2_500)
+
+        // Loopback decline/timeout simulation (Settings → "Simulate next card
+        // outcome"). A real payment SDK gets these from the acquirer; here we
+        // fabricate them so the EPOS's non-approval handling is exercisable.
+        when (request.simulatedOutcome) {
+            SimulatedOutcome.DECLINE -> return TerminalSaleResponse(
+                authorised = false, failureReason = "Card declined (simulated)"
+            )
+            SimulatedOutcome.NO_CARD -> return TerminalSaleResponse(
+                authorised = false, timedOut = true,
+                failureReason = "No card presented (simulated)"
+            )
+            SimulatedOutcome.WALK_AWAY -> return TerminalSaleResponse(
+                authorised = false, customerTimedOut = true,
+                failureReason = "Customer didn't respond (simulated)"
+            )
+            SimulatedOutcome.TERMINAL_ERROR -> return TerminalSaleResponse(
+                authorised = false, notCompleted = true,
+                failureReason = "Terminal couldn't complete the transaction (simulated)"
+            )
+            SimulatedOutcome.APPROVE -> { /* fall through to the normal approved sale */ }
+        }
+
         val authCode = "%06d".format((100_000..999_999).random())
         val txnRef = "OCP-${(System.currentTimeMillis() / 1000) % 1_000_000}-${(1_000..9_999).random()}"
         val timestamp = java.time.Instant.now().toString()
