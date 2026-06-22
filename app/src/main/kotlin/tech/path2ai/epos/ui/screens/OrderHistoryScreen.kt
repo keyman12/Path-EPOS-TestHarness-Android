@@ -93,7 +93,7 @@ fun OrderHistoryScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(order.orderReference, fontWeight = FontWeight.Medium)
                                     Spacer(Modifier.width(8.dp))
-                                    StatusBadge(order.status, order.orderType)
+                                    StatusBadge(order)
                                 }
                                 Text(dateFormat.format(Date(order.date)), fontSize = 12.sp, color = Color.Gray)
                                 order.cardDisplay?.let { Text(it, fontSize = 12.sp, color = Color.Gray) }
@@ -130,14 +130,16 @@ fun OrderHistoryScreen(
 }
 
 @Composable
-private fun StatusBadge(status: OrderStatus, orderType: OrderType) {
+private fun StatusBadge(order: CompletedOrder) {
     val (text, color) = when {
-        orderType == OrderType.REFUND -> "REFUND" to Color(0xFF9C27B0)
-        orderType == OrderType.VOID -> "VOID" to Color(0xFFD97706)
-        status == OrderStatus.COMPLETED -> "COMPLETED" to OCGreen
-        status == OrderStatus.DECLINED -> "DECLINED" to OCRed
-        status == OrderStatus.REFUNDED -> "REFUNDED" to Color(0xFFFF9800)
-        status == OrderStatus.VOIDED -> "VOIDED" to Color(0xFFD97706)
+        order.orderType == OrderType.REFUND -> "REFUND" to Color(0xFF9C27B0)
+        order.orderType == OrderType.VOID -> "VOID" to Color(0xFFD97706)
+        // Partially item-refunded sales stay COMPLETED, so check this first.
+        order.isPartiallyRefunded -> "PART REFUNDED" to Color(0xFFFF9800)
+        order.status == OrderStatus.COMPLETED -> "COMPLETED" to OCGreen
+        order.status == OrderStatus.DECLINED -> "DECLINED" to OCRed
+        order.status == OrderStatus.REFUNDED -> "REFUNDED" to Color(0xFFFF9800)
+        order.status == OrderStatus.VOIDED -> "VOIDED" to Color(0xFFD97706)
         else -> "" to Color.Gray
     }
     if (text.isNotEmpty()) {

@@ -99,6 +99,45 @@ class OrderManager(private val context: Context) {
         saveOrders()
     }
 
+    /**
+     * Record a whole-line item refund: log a REFUND order for the selected lines
+     * (plus the tip on a clearing refund), and mark those line indices refunded on
+     * the original sale. When every line has been refunded the sale flips to
+     * REFUNDED; until then it stays COMPLETED and partially refundable.
+     */
+    fun recordItemRefund(
+        originalOrder: CompletedOrder,
+        refundReference: String?,
+        refundedIndices: List<Int>,
+        tipRefundPence: Int = 0
+    ) {
+        val items = refundedIndices.mapNotNull { originalOrder.lineItems.getOrNull(it) }
+        val itemsValue = items.sumOf { it.lineTotal }
+        val refund = CompletedOrder(
+            orderReference = generateReference(),
+            lineItems = items,
+            amountPence = itemsValue + tipRefundPence,
+            currencyCode = originalOrder.currencyCode,
+            paymentMethod = originalOrder.paymentMethod,
+            orderType = OrderType.REFUND,
+            terminalReference = refundReference,
+            status = OrderStatus.COMPLETED,
+            tipAmountPence = tipRefundPence.takeIf { it > 0 }
+        )
+        val nowRefunded = (originalOrder.refundedLineIndices + refundedIndices).distinct().sorted()
+        _orders.value = listOf(refund) + _orders.value.map { o ->
+            if (o.id == originalOrder.id) {
+                val fullyRefunded = nowRefunded.size >= o.lineItems.size
+                o.copy(
+                    refundedLineIndices = nowRefunded,
+                    status = if (fullyRefunded) OrderStatus.REFUNDED else o.status,
+                    refundedAt = if (fullyRefunded) System.currentTimeMillis() else o.refundedAt
+                )
+            } else o
+        }
+        saveOrders()
+    }
+
     fun recordRefund(originalOrder: CompletedOrder, refundReference: String?) {
         val refund = CompletedOrder(
             orderReference = generateReference(),
