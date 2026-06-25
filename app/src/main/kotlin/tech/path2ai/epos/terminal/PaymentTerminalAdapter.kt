@@ -21,6 +21,19 @@ interface PaymentTerminalAdapter {
     suspend fun submitSale(request: TerminalSaleRequest): TerminalSaleResponse
     suspend fun submitRefund(request: TerminalRefundRequest): TerminalRefundResponse
     suspend fun submitVoid(request: TerminalVoidRequest): TerminalVoidResponse
+
+    /**
+     * Pre-authorization lifecycle backing a bar/café tab: place a hold, adjust
+     * it, complete (capture) it, or void (release) it. The OCPay loopback fakes
+     * each step with canned `OCP-PREAUTH-*` references — the same pattern as the
+     * faked sale / refund / void above; a real payment SDK would drive the
+     * terminal's own pre-auth flow.
+     */
+    suspend fun submitPreAuth(request: TerminalPreAuthRequest): TerminalPreAuthResponse
+    suspend fun submitAdjustPreAuth(request: TerminalPreAuthAdjustRequest): TerminalPreAuthResponse
+    suspend fun submitCompletePreAuth(request: TerminalPreAuthCompleteRequest): TerminalPreAuthResponse
+    suspend fun submitVoidPreAuth(request: TerminalPreAuthVoidRequest): TerminalPreAuthResponse
+
     suspend fun getTransactionStatus(reference: String): TerminalTransactionStatus
 
     /**

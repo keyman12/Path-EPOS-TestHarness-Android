@@ -91,6 +91,60 @@ data class TerminalVoidResponse(
     val failureReason: String? = null
 )
 
+/**
+ * Pre-authorization (a card hold): reserve funds without debiting, then later
+ * adjust / complete (capture) / void (release) the hold. Used to back a bar/café
+ * tab. The [TerminalPreAuthResponse.terminalReference] returned by the initial
+ * hold is the handle the EPOS stores against the tab and replays for every
+ * follow-on operation.
+ *
+ * Loopback-only: the OCPay adapter fakes the whole lifecycle with canned
+ * `OCP-PREAUTH-*` references — exactly like it fakes sale / refund / void. A real
+ * payment SDK integrated later would drive the terminal's own pre-auth flow.
+ */
+data class TerminalPreAuthRequest(
+    val amountPence: Int,
+    val currencyCode: String,
+    val orderReference: String
+)
+
+data class TerminalPreAuthResponse(
+    val succeeded: Boolean,
+    /** Handle for adjust / complete / void; store this against the order/tab. */
+    val terminalReference: String? = null,
+    /** The current reserved/held total after this operation, in minor units. */
+    val holdAmountPence: Int = 0,
+    val failureReason: String? = null,
+    /**
+     * Card-receipt block for a CAPTURE (complete) — drives the settlement
+     * receipt. Null for hold / adjust / void (nothing was debited). The OCPay
+     * loopback fabricates it on completion, just as [submitSale] does for a sale.
+     */
+    val cardReceiptData: TerminalCardReceipt? = null
+)
+
+/** Adjust a hold to a NEW TOTAL (not a delta): higher = increase, lower = decrease. */
+data class TerminalPreAuthAdjustRequest(
+    val originalTerminalReference: String,
+    val newTotalPence: Int,
+    val currencyCode: String,
+    val orderReference: String
+)
+
+/** Capture (debit) a held pre-auth and close it. [amountPence] may be <= the hold. */
+data class TerminalPreAuthCompleteRequest(
+    val originalTerminalReference: String,
+    val amountPence: Int,
+    val currencyCode: String,
+    val orderReference: String
+)
+
+/** Release a held pre-auth without debiting. */
+data class TerminalPreAuthVoidRequest(
+    val originalTerminalReference: String,
+    val orderReference: String
+)
+
 data class TerminalTransactionStatus(
     val reference: String,
     val state: String,

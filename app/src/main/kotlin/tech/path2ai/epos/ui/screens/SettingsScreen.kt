@@ -149,6 +149,71 @@ fun SettingsScreen(
                 }
             )
 
+            // Allow pre-auth / tabs — gates the Tabs entry point and the
+            // "Add to Tab" tender. Mirrors a real terminal's Merchant.PreAuthEnabled.
+            var allowPreAuth by remember { mutableStateOf(PaymentSettings.isPreAuthAllowed(context)) }
+            ListItem(
+                headlineContent = { Text("Allow pre-auth (tabs)") },
+                supportingContent = {
+                    Text(
+                        "Enables bar/café tabs backed by a card hold. When off, the " +
+                            "Tabs button and the “Add to Tab” tender are hidden.",
+                        color = Color.Gray
+                    )
+                },
+                leadingContent = {
+                    Icon(
+                        Icons.Default.Receipt,
+                        contentDescription = null,
+                        tint = if (allowPreAuth) OCGreen else Color.Gray
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = allowPreAuth,
+                        onCheckedChange = {
+                            allowPreAuth = it
+                            PaymentSettings.setPreAuthAllowed(context, it)
+                        }
+                    )
+                }
+            )
+
+            // Tab limit — the most a tab may accrue to before more items are
+            // blocked (independent of the hold). Editable when pre-auth is on.
+            if (allowPreAuth) {
+                var capText by remember {
+                    mutableStateOf("%.2f".format(PaymentSettings.tabCapPence(context) / 100.0))
+                }
+                ListItem(
+                    headlineContent = { Text("Tab limit") },
+                    supportingContent = {
+                        Text(
+                            "Maximum bill a single tab may reach before more items are blocked.",
+                            color = Color.Gray
+                        )
+                    },
+                    leadingContent = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
+                    trailingContent = {
+                        OutlinedTextField(
+                            value = capText,
+                            onValueChange = { v ->
+                                capText = v
+                                v.toDoubleOrNull()?.let { pounds ->
+                                    PaymentSettings.setTabCapPence(context, Math.round(pounds * 100).toInt())
+                                }
+                            },
+                            label = { Text("£") },
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                            ),
+                            modifier = Modifier.width(120.dp)
+                        )
+                    }
+                )
+            }
+
             // Email receipts — configure the SMTP server used to email receipts.
             ListItem(
                 headlineContent = { Text("Email receipts (SMTP)") },

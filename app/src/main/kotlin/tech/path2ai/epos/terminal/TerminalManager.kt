@@ -93,6 +93,30 @@ class TerminalManager(private val adapter: PaymentTerminalAdapter) : ViewModel()
         }
     }
 
+    // ── Pre-authorization (tab hold) lifecycle ──────────────────────────────
+    // Pass-throughs to the adapter, mirroring submitSale/Refund/Void with the
+    // busy flag so the tab screens get the same in-flight signalling.
+
+    suspend fun submitPreAuth(request: TerminalPreAuthRequest): TerminalPreAuthResponse {
+        _isBusy.value = true
+        return try { adapter.submitPreAuth(request) } finally { _isBusy.value = false }
+    }
+
+    suspend fun submitAdjustPreAuth(request: TerminalPreAuthAdjustRequest): TerminalPreAuthResponse {
+        _isBusy.value = true
+        return try { adapter.submitAdjustPreAuth(request) } finally { _isBusy.value = false }
+    }
+
+    suspend fun submitCompletePreAuth(request: TerminalPreAuthCompleteRequest): TerminalPreAuthResponse {
+        _isBusy.value = true
+        return try { adapter.submitCompletePreAuth(request) } finally { _isBusy.value = false }
+    }
+
+    suspend fun submitVoidPreAuth(request: TerminalPreAuthVoidRequest): TerminalPreAuthResponse {
+        _isBusy.value = true
+        return try { adapter.submitVoidPreAuth(request) } finally { _isBusy.value = false }
+    }
+
     suspend fun getTransactionStatus(reference: String): TerminalTransactionStatus {
         return adapter.getTransactionStatus(reference)
     }

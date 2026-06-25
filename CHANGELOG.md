@@ -12,6 +12,14 @@ also raise the integer `versionCode` by 1 and add a dated entry below. Policy:
 > This harness is **loopback-only**: every transaction runs through the simulated
 > `OCPayTerminalAdapter` — no emulator, Verifone, or real-terminal link.
 
+## 1.1 — 2026-06-25
+
+- **Loopback pre-authorization + bar/café tabs** (lock-step with the iOS harness + Android
+  demo): open a tab on a (faked) card hold, add rounds, close & settle — capture when ≤ hold,
+  void + standard sale when over, void when empty; tab cap (default £200). Pre-auth outcomes
+  are faked by the OCPay loopback (canned `OCP-PREAUTH-*` refs); orders/receipts carry the tab
+  name + settlement kind.
+
 ## 1.0 — 2026-06-25
 
 Baseline: versioning + changelog mechanism established; About now reads the build version.

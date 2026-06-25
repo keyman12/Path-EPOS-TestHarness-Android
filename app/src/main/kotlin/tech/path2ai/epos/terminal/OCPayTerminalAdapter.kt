@@ -130,6 +130,67 @@ class OCPayTerminalAdapter : PaymentTerminalAdapter {
         )
     }
 
+    // ── Pre-authorization (tab hold) lifecycle ──────────────────────────────
+    // All faked, like submitSale/Refund/Void above: canned OCP-PREAUTH-* refs,
+    // always approved. A real payment SDK would round-trip to the acquirer.
+
+    private fun preAuthRef() =
+        "OCP-PREAUTH-${(System.currentTimeMillis() / 1000) % 1_000_000}-${(1_000..9_999).random()}"
+
+    /** Place a hold (reserve funds, nothing debited). */
+    override suspend fun submitPreAuth(request: TerminalPreAuthRequest): TerminalPreAuthResponse {
+        delay(2_500)   // present-card delay, mirrors a real hold
+        return TerminalPreAuthResponse(
+            succeeded = true,
+            terminalReference = preAuthRef(),
+            holdAmountPence = request.amountPence
+        )
+    }
+
+    /** Adjust a hold to a new total (re-uses the same handle). */
+    override suspend fun submitAdjustPreAuth(request: TerminalPreAuthAdjustRequest): TerminalPreAuthResponse {
+        delay(1_200)
+        return TerminalPreAuthResponse(
+            succeeded = true,
+            terminalReference = request.originalTerminalReference,
+            holdAmountPence = request.newTotalPence
+        )
+    }
+
+    /** Capture (debit) the held amount and close the hold — carries a receipt. */
+    override suspend fun submitCompletePreAuth(request: TerminalPreAuthCompleteRequest): TerminalPreAuthResponse {
+        delay(1_500)
+        val ref = "OCP-PREAUTH-CAP-${(System.currentTimeMillis() / 1000) % 1_000_000}-${(1_000..9_999).random()}"
+        val authCode = "%06d".format((100_000..999_999).random())
+        return TerminalPreAuthResponse(
+            succeeded = true,
+            terminalReference = ref,
+            holdAmountPence = request.amountPence,
+            cardReceiptData = TerminalCardReceipt(
+                status = "APPROVED",
+                timestamp = java.time.Instant.now().toString(),
+                txnRef = ref,
+                terminalId = "OC-TILL-01",
+                merchantId = "OC-MERCHANT-001",
+                authorisationCode = authCode,
+                verificationMethod = "CONTACTLESS",
+                aid = "A0000000031010",
+                entryMode = "CONTACTLESS",
+                maskedPan = "****1234",
+                cardScheme = "VISA"
+            )
+        )
+    }
+
+    /** Release a hold without debiting. */
+    override suspend fun submitVoidPreAuth(request: TerminalPreAuthVoidRequest): TerminalPreAuthResponse {
+        delay(1_200)
+        return TerminalPreAuthResponse(
+            succeeded = true,
+            terminalReference = "OCP-PREAUTH-VOID-${(System.currentTimeMillis() / 1000) % 1_000_000}-${(1_000..9_999).random()}"
+        )
+    }
+
     override suspend fun getTransactionStatus(reference: String): TerminalTransactionStatus {
         delay(500)
         return TerminalTransactionStatus(

@@ -492,6 +492,14 @@ fun ReceiptContent(
                 Text(receipt.cashierName, fontSize = 11.sp, color = OCGreen.copy(alpha = 0.8f))
             }
             Text(receipt.orderDate, fontSize = 11.sp, color = Color.Gray)
+            // Tab settlement context — the settlement kind and the tab's customer
+            // name, shown only when this receipt closed out a bar/café tab.
+            receipt.transactionTypeLabel?.let {
+                Text(it, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = OCGreen, modifier = Modifier.padding(top = 2.dp))
+            }
+            receipt.tabName?.let {
+                Text("Tab: $it", fontSize = 11.sp, color = Color.Gray)
+            }
         }
 
         ReceiptDivider()

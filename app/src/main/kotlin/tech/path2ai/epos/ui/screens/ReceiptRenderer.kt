@@ -37,6 +37,8 @@ object ReceiptRenderer {
         sb.appendLine(receipt.merchantAddress)
         sb.appendLine("Order: ${receipt.orderNumber}  Till: ${receipt.tillNumber}  ${receipt.cashierName}")
         sb.appendLine(receipt.orderDate)
+        receipt.transactionTypeLabel?.let { sb.appendLine(it) }
+        receipt.tabName?.let { sb.appendLine("Tab: $it") }
         sb.appendLine("-".repeat(w))
         for (item in receipt.lineItems) {
             sb.appendLine(priceRow("${item.quantity} x ${item.name}", "£${"%.2f".format(item.lineTotal / 100.0)}", w))
@@ -163,6 +165,9 @@ object ReceiptRenderer {
         lines += ReceiptLine("Order: ${receipt.orderNumber}", style = ReceiptLineStyle.GRAY)
         lines += ReceiptLine("Till: ${receipt.tillNumber}  ${receipt.cashierName}", style = ReceiptLineStyle.GRAY)
         lines += ReceiptLine(receipt.orderDate, style = ReceiptLineStyle.GRAY)
+        // Tab settlement context (only set when closing a tab).
+        receipt.transactionTypeLabel?.let { lines += ReceiptLine(it, style = ReceiptLineStyle.GRAY) }
+        receipt.tabName?.let { lines += ReceiptLine("Tab: $it", style = ReceiptLineStyle.GRAY) }
         lines += ReceiptLine("-".repeat(32), style = ReceiptLineStyle.SEPARATOR)
 
         for (item in receipt.lineItems) {

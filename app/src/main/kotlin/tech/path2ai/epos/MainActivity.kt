@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import tech.path2ai.epos.managers.InventoryManager
 import tech.path2ai.epos.managers.OrderManager
+import tech.path2ai.epos.managers.TabManager
 import tech.path2ai.epos.terminal.OCPayTerminalAdapter
 import tech.path2ai.epos.terminal.TerminalManager
 import tech.path2ai.epos.ui.screens.SplashScreen
@@ -18,6 +19,7 @@ class MainActivity : ComponentActivity() {
 
         val terminalManager = TerminalManager(OCPayTerminalAdapter())
         val orderManager = OrderManager(applicationContext)
+        val tabManager = TabManager(applicationContext)
         val inventoryManager = InventoryManager()
 
         setContent {
@@ -25,6 +27,7 @@ class MainActivity : ComponentActivity() {
                 SplashScreen(
                     terminalManager = terminalManager,
                     orderManager = orderManager,
+                    tabManager = tabManager,
                     inventoryManager = inventoryManager
                 )
             }

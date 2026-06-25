@@ -53,6 +53,10 @@ data class FullReceipt(
     val total: Int,
     val currency: String = "GBP",
     val cardReceiptBlock: CardReceiptBlock? = null,
+    /** e.g. "Pre-auth completion" / "Sale (tab settlement)" — shown under the header when set. */
+    val transactionTypeLabel: String? = null,
+    /** Customer name when this receipt settles a tab — rendered as "Tab: <name>". */
+    val tabName: String? = null,
     val footerLines: List<String> = listOf("Thank you for visiting!", "path2ai.tech"),
     /**
      * Customer-added tip in minor units (pence). Zero when no tip.
