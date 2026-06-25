@@ -35,6 +35,10 @@ android {
 
     buildFeatures {
         compose = true
+        // Generates BuildConfig.VERSION_NAME from versionName above — the single
+        // source of truth the About row reads, so the displayed version can never
+        // drift from the build. See CHANGELOG.md for the bump convention.
+        buildConfig = true
     }
 }
 

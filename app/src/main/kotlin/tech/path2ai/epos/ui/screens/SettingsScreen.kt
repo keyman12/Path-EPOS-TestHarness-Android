@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import tech.path2ai.epos.BuildConfig
 import tech.path2ai.epos.managers.OrderManager
 import tech.path2ai.epos.terminal.PaymentSettings
 import tech.path2ai.epos.terminal.SimulatedOutcome
@@ -173,7 +174,7 @@ fun SettingsScreen(
             Text("About", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             ListItem(
                 headlineContent = { Text("OrderChampion EPOS") },
-                supportingContent = { Text("v1.0 · ${terminalManager.adapterName}") },
+                supportingContent = { Text("v${BuildConfig.VERSION_NAME} · ${terminalManager.adapterName}") },
                 leadingContent = { Icon(Icons.Default.Info, contentDescription = null) }
             )
         }
